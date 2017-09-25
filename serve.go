@@ -31,6 +31,8 @@ func Serve(handlers *types.FaaSHandlers, config *types.FaaSConfig) {
 
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", handlers.FunctionProxy)
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", handlers.FunctionProxy)
+	
+	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {fmt.Fprint(w, "OK")})
 
 	readTimeout := config.ReadTimeout
 	writeTimeout := config.WriteTimeout
