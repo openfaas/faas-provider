@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/alexellis/faas-provider/types"
 	"github.com/gorilla/mux"
+	"github.com/openfaas/faas-provider/types"
 )
 
 // Mark this as a Golang "package"
