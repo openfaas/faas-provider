@@ -9,7 +9,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/openfaas/faas-provider/types"
+	//"github.com/openfaas/faas-provider/types"
+	"github.com/realbot/faas-provider/types"
 )
 
 // Mark this as a Golang "package"
@@ -31,8 +32,8 @@ func Serve(handlers *types.FaaSHandlers, config *types.FaaSConfig) {
 
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", handlers.FunctionProxy)
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", handlers.FunctionProxy)
-	
-	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "OK") })
+
+	r.HandleFunc("/healthz", handlers.HealthHandler).Methods("GET")
 
 	readTimeout := config.ReadTimeout
 	writeTimeout := config.WriteTimeout
