@@ -16,6 +16,7 @@ type FaaSHandlers struct {
 
 	// Optional: Update an existing function
 	UpdateHandler http.HandlerFunc
+	HealthHandler http.HandlerFunc
 }
 
 // FaaSConfig set config for HTTP handlers
