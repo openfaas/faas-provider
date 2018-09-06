@@ -3,6 +3,7 @@
 
 package types
 
+// ScaleServiceRequest provides the ServiceName and number of Replicas to be scaled to
 type ScaleServiceRequest struct {
 	ServiceName string `json:"serviceName"`
 	Replicas    uint64 `json:"replicas"`
