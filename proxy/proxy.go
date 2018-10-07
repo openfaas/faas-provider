@@ -1,4 +1,4 @@
-package handlers
+package proxy
 
 import (
 	"bytes"
@@ -18,10 +18,10 @@ const (
 	defaultContentType = "text/plain"
 )
 
-// MakeProxyHandler creates a standard http HandlerFunc to proxy function requests to the function.
+// NewHandlerFunc creates a standard http HandlerFunc to proxy function requests to the function.
 // The FaaS provider implementation is responsible for providing the resolver function implementation.
 // resolver will receive the function name and should return the address of the function service.
-func MakeProxyHandler(timeout time.Duration, resolver func(string) string) http.HandlerFunc {
+func NewHandlerFunc(timeout time.Duration, resolver func(string) string) http.HandlerFunc {
 	proxyClient := http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -57,10 +57,12 @@ func MakeProxyHandler(timeout time.Duration, resolver func(string) string) http.
 // proxyRequest handles the actual resolution of and then request to the function service.
 func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient http.Client, resolver func(string) string) {
 
-	functionName := getFunctionName(originalReq)
+	pathVars := mux.Vars(originalReq)
+	// extraPath := pathVars["params"]
+	functionName := pathVars["name"]
 	if functionName == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Provide an x-function header or valid route /function/function_name."))
+		w.Write([]byte("provide v valid route /function/function_name."))
 		return
 	}
 
@@ -99,19 +101,6 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 
 	w.WriteHeader(http.StatusOK)
 	io.Copy(w, response.Body)
-}
-
-// getFunctionName inspects the request and returns the specified function.  This allows the
-// caller to specify the function via the X-Function header or as part to the URL path.  The
-// name found in the header is ignored if a name can be found in the URL path.
-func getFunctionName(r *http.Request) (functionName string) {
-	functionName = mux.Vars(r)["name"]
-	if functionName == "" {
-		functionName = r.Header.Get("X-Function")
-		log.Print("trying X-Function header, found: ", functionName)
-	}
-
-	return functionName
 }
 
 // copyHeaders clones the header values from the source into the destination.
