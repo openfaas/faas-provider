@@ -20,7 +20,8 @@ const (
 // BaseURLResolver URL resolver for proxy requests
 //
 // The FaaS provider implementation is responsible for providing the resolver function implementation.
-// resolver will receive the function name and should return the address of the function service.
+// BaseURLResolver.Resolve will receive the function name and should return the base Address of the
+// function service.
 type BaseURLResolver interface {
 	Resolve(functionName string) string
 }
