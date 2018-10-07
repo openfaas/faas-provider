@@ -48,6 +48,7 @@ func Serve(handlers *types.FaaSHandlers, config *types.FaaSConfig) {
 	}
 
 	// System (auth) endpoints
+
 	r.HandleFunc("/system/functions", handlers.FunctionReader).Methods("GET")
 	r.HandleFunc("/system/functions", handlers.DeployHandler).Methods("POST")
 	r.HandleFunc("/system/functions", handlers.DeleteHandler).Methods("DELETE")
@@ -60,6 +61,7 @@ func Serve(handlers *types.FaaSHandlers, config *types.FaaSConfig) {
 	// Open endpoints
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", handlers.FunctionProxy)
 	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", handlers.FunctionProxy)
+	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", handlers.FunctionProxy)
 
 	if config.EnableHealth {
 		r.HandleFunc("/healthz", handlers.Health).Methods("GET")
