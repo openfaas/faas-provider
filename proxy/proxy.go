@@ -61,6 +61,7 @@ func NewHandlerFunc(timeout time.Duration, resolver BaseURLResolver) http.Handle
 
 // proxyRequest handles the actual resolution of and then request to the function service.
 func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient http.Client, resolver BaseURLResolver) {
+	ctx := originalReq.Context()
 
 	pathVars := mux.Vars(originalReq)
 	functionName := pathVars["name"]
@@ -84,7 +85,7 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	defer proxyReq.Body.Close()
 
 	start := time.Now()
-	response, err := proxyClient.Do(proxyReq)
+	response, err := proxyClient.Do(proxyReq.WithContext(ctx))
 	seconds := time.Since(start)
 
 	if err != nil {
