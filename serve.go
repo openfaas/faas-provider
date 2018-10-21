@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/auth"
+	"github.com/openfaas/faas-provider/proxy"
 	"github.com/openfaas/faas-provider/types"
 )
 
@@ -59,9 +60,10 @@ func Serve(handlers *types.FaaSHandlers, config *types.FaaSConfig) {
 	r.HandleFunc("/system/info", handlers.InfoHandler).Methods("GET")
 
 	// Open endpoints
-	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", handlers.FunctionProxy)
-	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", handlers.FunctionProxy)
-	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", handlers.FunctionProxy)
+	functionProxy := proxy.NewHandlerFunc(config.ReadTimeout, config.FunctionProxyResolver)
+	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", functionProxy)
+	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", functionProxy)
+	r.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", functionProxy)
 
 	if config.EnableHealth {
 		r.HandleFunc("/healthz", handlers.Health).Methods("GET")
