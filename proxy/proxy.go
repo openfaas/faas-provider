@@ -38,6 +38,10 @@ func NewHandlerFunc(timeout time.Duration, resolver BaseURLResolver) http.Handle
 			IdleConnTimeout:       120 * time.Millisecond,
 			ExpectContinueTimeout: 1500 * time.Millisecond,
 		},
+		Timeout: timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
