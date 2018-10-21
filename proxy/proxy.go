@@ -23,7 +23,7 @@ const (
 // BaseURLResolver.Resolve will receive the function name and should return the base Address of the
 // function service.
 type BaseURLResolver interface {
-	Resolve(functionName string) string
+	Resolve(functionName string) (string, error)
 }
 
 // NewHandlerFunc creates a standard http HandlerFunc to proxy function requests to the function.
@@ -71,9 +71,10 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 		return
 	}
 
-	functionAddr := resolver.Resolve(functionName)
-	if functionAddr == "" {
+	functionAddr, resolveErr := resolver.Resolve(functionName)
+	if resolveErr != nil {
 		// TODO: Should record the 404/not found error in Prometheus.
+		log.Printf("resolver error: cannot find %s: %s\n", functionName, resolveErr.Error())
 		writeError(w, http.StatusNotFound, "Cannot find service: %s.", functionName)
 		return
 	}
