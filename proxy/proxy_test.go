@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -15,6 +16,13 @@ func varHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("name: %s params: %s", vars["name"], vars["params"])))
+}
+
+func testResolver(functionName string) (url.URL, error) {
+	return url.URL{
+		Scheme: "http",
+		Host:   functionName,
+	}, nil
 }
 
 func Test_pathParsing(t *testing.T) {
@@ -102,7 +110,8 @@ func Test_buildProxyRequest_Body_Method_Query(t *testing.T) {
 		t.Fail()
 	}
 
-	upstream, err := buildProxyRequest(request, "funcName", "")
+	funcURL, _ := testResolver("funcName")
+	upstream, err := buildProxyRequest(request, funcURL, "")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -134,7 +143,8 @@ func Test_buildProxyRequest_Body_Method_Query(t *testing.T) {
 func Test_buildProxyRequest_NoBody_GetMethod_NoQuery(t *testing.T) {
 	request, _ := http.NewRequest(http.MethodGet, "/", nil)
 
-	upstream, err := buildProxyRequest(request, "funcName", "")
+	funcURL, _ := testResolver("funcName")
+	upstream, err := buildProxyRequest(request, funcURL, "")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -166,7 +176,8 @@ func Test_buildProxyRequest_HasXForwardedHostHeaderWhenSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	upstream, err := buildProxyRequest(request, "funcName", "/")
+	funcURL, _ := testResolver("funcName")
+	upstream, err := buildProxyRequest(request, funcURL, "/")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -186,7 +197,8 @@ func Test_buildProxyRequest_XForwardedHostHeader_Empty_WhenNotSet(t *testing.T) 
 		t.Fatal(err)
 	}
 
-	upstream, err := buildProxyRequest(request, "funcName", "/")
+	funcURL, _ := testResolver("funcName")
+	upstream, err := buildProxyRequest(request, funcURL, "/")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -207,7 +219,8 @@ func Test_buildProxyRequest_XForwardedHostHeader_WhenAlreadyPresent(t *testing.T
 	}
 
 	request.Header.Set("X-Forwarded-Host", headerValue)
-	upstream, err := buildProxyRequest(request, "funcName", "/")
+	funcURL, _ := testResolver("funcName")
+	upstream, err := buildProxyRequest(request, funcURL, "/")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -234,7 +247,8 @@ func Test_buildProxyRequest_WithPathNoQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstream, err := buildProxyRequest(request, "xyz", functionPath)
+	funcURL, _ := testResolver("xyz")
+	upstream, err := buildProxyRequest(request, funcURL, functionPath)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -285,7 +299,8 @@ func Test_buildProxyRequest_WithNoPathNoQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstream, err := buildProxyRequest(request, "xyz", functionPath)
+	funcURL, _ := testResolver("xyz")
+	upstream, err := buildProxyRequest(request, funcURL, functionPath)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -334,7 +349,8 @@ func Test_buildProxyRequest_WithPathAndQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstream, err := buildProxyRequest(request, "xyz", functionPath)
+	funcURL, _ := testResolver("xyz")
+	upstream, err := buildProxyRequest(request, funcURL, functionPath)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

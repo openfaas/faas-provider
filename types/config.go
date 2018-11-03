@@ -3,14 +3,15 @@ package types
 import (
 	"net/http"
 	"time"
-
-	"github.com/openfaas/faas-provider/proxy"
 )
 
 // FaaSHandlers provide handlers for OpenFaaS
 type FaaSHandlers struct {
 	FunctionReader http.HandlerFunc
 	DeployHandler  http.HandlerFunc
+	// FunctionProxy provides the function invocation proxy logic.  Use proxy.NewHandlerFunc to
+	// use the standard OpenFaaS proxy implementation or provide completely custom proxy logic.
+	FunctionProxy  http.HandlerFunc
 	DeleteHandler  http.HandlerFunc
 	ReplicaReader  http.HandlerFunc
 	ReplicaUpdater http.HandlerFunc
@@ -29,9 +30,4 @@ type FaaSConfig struct {
 	EnableHealth    bool
 	EnableBasicAuth bool
 	SecretMountPath string
-
-	// The FaaS provider implementation is responsible for providing the resolver function implementation.
-	// BaseURLResolver.Resolve will receive the function name and should return the base Address of the
-	// function service.
-	FunctionProxyResolver proxy.BaseURLResolver
 }

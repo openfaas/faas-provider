@@ -1,3 +1,23 @@
+// Package proxy provides a default function invocation proxy method for OpenFaaS providers.
+//
+// The function proxy logic is used by the Gateway when `direct_functions` is set to false.
+// This means that the provider will direct call the function and return the results.  This
+// involves resolving the function by name and then copying the result into the original HTTP
+// request.
+//
+// openfaas-provider has implemented a standard HTTP HandlerFunc that will handle setting
+// timeout values, parsing the request path, and copying the request/response correctly.
+// 		bootstrapHandlers := bootTypes.FaaSHandlers{
+// 			FunctionProxy:  proxy.NewHandlerFunc(timeout, resolver),
+// 			DeleteHandler:  handlers.MakeDeleteHandler(clientset),
+// 			DeployHandler:  handlers.MakeDeployHandler(clientset),
+// 			FunctionReader: handlers.MakeFunctionReader(clientset),
+// 			ReplicaReader:  handlers.MakeReplicaReader(clientset),
+// 			ReplicaUpdater: handlers.MakeReplicaUpdater(clientset),
+// 			InfoHandler:    handlers.MakeInfoHandler(),
+// 		}
+//
+// proxy.NewHandlerFunc is optional, but does simplify the logic of your provider.
 package proxy
 
 import (
@@ -20,15 +40,35 @@ const (
 // BaseURLResolver URL resolver for proxy requests
 //
 // The FaaS provider implementation is responsible for providing the resolver function implementation.
-// BaseURLResolver.Resolve will receive the function name and should return the base Address of the
+// BaseURLResolver.Resolve will receive the function name and should return the URL of the
 // function service.
 type BaseURLResolver interface {
-	Resolve(functionName string) (string, error)
+	Resolve(functionName string) (url.URL, error)
 }
 
-// NewHandlerFunc creates a standard http HandlerFunc to proxy function requests to the function.
+// NewHandlerFunc creates a standard http.HandlerFunc to proxy function requests.
+// The returned http.HandlerFunc will ensure:
+//
+// 	- proper proxy request timeouts
+// 	- proxy requests for GET, POST, PATCH, PUT, and DELETE
+// 	- path parsing including support for extracing the function name, sub-paths, and query paremeters
+// 	- passing and setting the `X-Forwarded-Host` and `X-Forwarded-For` headers
+// 	- logging errors and proxy request timing to stdout
+//
+// Note that this will panic if `resolver` is nil.
 func NewHandlerFunc(timeout time.Duration, resolver BaseURLResolver) http.HandlerFunc {
+	if resolver == nil {
+		panic("NewHandlerFunc: empty proxy handler resolver, cannot be nil")
+	}
+
 	proxyClient := http.Client{
+		// these Transport values ensure that the http Client will eventually timeout and prevents
+		// infinite retries. The default http.Client configure these timeouts.  The specific
+		// values tuned via performance testing/benchmarking
+		//
+		// Additional context can be found at
+		// - https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
+		// - https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
@@ -113,10 +153,16 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 
 // buildProxyRequest creates a request object for the proxy request, it will ensure that
 // the original request headers are preserved as well as setting openfaas system headers
-func buildProxyRequest(originalReq *http.Request, baseURL, extraPath string) (*http.Request, error) {
+func buildProxyRequest(originalReq *http.Request, baseURL url.URL, extraPath string) (*http.Request, error) {
+
+	host := baseURL.Host
+	if baseURL.Port() == "" {
+		host = baseURL.Host + ":" + watchdogPort
+	}
+
 	url := url.URL{
-		Scheme:   "http",
-		Host:     baseURL + ":" + watchdogPort,
+		Scheme:   baseURL.Scheme,
+		Host:     host,
 		Path:     extraPath,
 		RawQuery: originalReq.URL.RawQuery,
 	}
