@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	watchdogPort       = "8080"
-	defaultContentType = "text/plain"
+	watchdogPort           = "8080"
+	defaultContentType     = "text/plain"
+	errMissingFunctionName = "Please provide a valid route /function/function_name."
 )
 
 // BaseURLResolver URL resolver for proxy requests
@@ -111,7 +112,7 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	pathVars := mux.Vars(originalReq)
 	functionName := pathVars["name"]
 	if functionName == "" {
-		writeError(w, http.StatusBadRequest, "Please provide a valid route /function/function_name.")
+		writeError(w, http.StatusBadRequest, errMissingFunctionName)
 		return
 	}
 
