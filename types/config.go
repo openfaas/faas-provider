@@ -15,6 +15,7 @@ type FaaSHandlers struct {
 	DeleteHandler  http.HandlerFunc
 	ReplicaReader  http.HandlerFunc
 	ReplicaUpdater http.HandlerFunc
+	SecretHandler  http.HandlerFunc
 
 	// Optional: Update an existing function
 	UpdateHandler http.HandlerFunc
