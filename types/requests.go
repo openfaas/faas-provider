@@ -20,3 +20,8 @@ type ProviderVersion struct {
 	SHA     string `json:"sha"`
 	Release string `json:"release"`
 }
+
+type Secret struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
