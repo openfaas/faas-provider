@@ -3,7 +3,7 @@ faas-provider
 
 This is a common template or interface for you to start building your own OpenFaaS backend.
 
-Checkout the [backends guide here](https://github.com/openfaas/faas/blob/master/guide/backends.md) before starting.
+Checkout the [backends guide here](https://github.com/openfaas/faas/blob/master/guide/deprecated/backends.md) before starting.
 
 OpenFaaS projects use the MIT License and are written in Golang. We encourage the same for external / third-party providers.
 
