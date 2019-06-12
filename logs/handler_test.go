@@ -13,6 +13,8 @@ import (
 	"go.uber.org/goleak"
 )
 
+var queryTimeout = 30 * time.Second
+
 func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T) {
 	defer goleak.VerifyNoLeaks(t)
 
@@ -26,7 +28,7 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 	json.NewEncoder(&expected).Encode(msgs[1])
 
 	querier := newFakeQueryRequester(msgs, nil)
-	logHandler := NewLogHandlerFunc(querier)
+	logHandler := NewLogHandlerFunc(querier, queryTimeout)
 	testSrv := httptest.NewServer(http.HandlerFunc(logHandler))
 	defer testSrv.Close()
 
@@ -57,7 +59,7 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 	}
 
 	querier := newFakeQueryRequester(msgs, nil)
-	logHandler := NewLogHandlerFunc(querier)
+	logHandler := NewLogHandlerFunc(querier, queryTimeout)
 	testSrv := httptest.NewServer(http.HandlerFunc(logHandler))
 	defer testSrv.Close()
 
@@ -79,44 +81,6 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 		}
 	}()
 	cancel()
-}
-
-func Test_logsHandlerLimitValueIsEnforced(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
-
-	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0"},
-		Message{Name: "funcFoo", Text: "msg 1"},
-		Message{Name: "funcFoo", Text: "msg 2"},
-		Message{Name: "funcFoo", Text: "msg 3"},
-	}
-
-	var expected bytes.Buffer
-	json.NewEncoder(&expected).Encode(msgs[0])
-	json.NewEncoder(&expected).Encode(msgs[1])
-	json.NewEncoder(&expected).Encode(msgs[2])
-
-	querier := newFakeQueryRequester(msgs, nil)
-	logHandler := NewLogHandlerFunc(querier)
-	testSrv := httptest.NewServer(http.HandlerFunc(logHandler))
-	defer testSrv.Close()
-
-	resp, err := http.Get(testSrv.URL + "?name=funcFoo&tail=3")
-	if err != nil {
-		t.Fatalf("unexpected error sending log request: %s", err)
-	}
-
-	querier.Close()
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("unexpected error reading log response: %s", err)
-	}
-
-	if string(body) != expected.String() {
-		t.Fatalf("expected log message %s, got: %s", expected.String(), body)
-	}
 }
 
 func Test_GETRequestParsing(t *testing.T) {
