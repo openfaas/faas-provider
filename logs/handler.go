@@ -63,9 +63,11 @@ func NewLogHandlerFunc(requestor Requester, timeout time.Duration) http.HandlerF
 		flusher.Flush()
 
 		// ensure that we always try to send the closing chunk, not the inverted order due to how
-		// the defer stack works
+		// the defer stack works. We need two flush statements to ensure that the empty slice is
+		// sent as its own chunk
 		defer flusher.Flush()
 		defer w.Write([]byte{})
+		defer flusher.Flush()
 
 		jsonEncoder := json.NewEncoder(w)
 		for messages != nil {
@@ -89,6 +91,7 @@ func NewLogHandlerFunc(requestor Requester, timeout time.Duration) http.HandlerF
 					log.Println(err.Error())
 					// write json error message here ?
 					jsonEncoder.Encode(Message{Text: "failed to serialize log message"})
+					flusher.Flush()
 					return
 				}
 
