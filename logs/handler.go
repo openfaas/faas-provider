@@ -67,13 +67,7 @@ func NewLogHandlerFunc(requestor Requester, timeout time.Duration) http.HandlerF
 		defer flusher.Flush()
 		defer w.Write([]byte{})
 
-		sent := 0
 		jsonEncoder := json.NewEncoder(w)
-
-		if logRequest.Tail > 0 {
-			log.Printf("LogHandler: watch for and stream `%d` log messages\n", logRequest.Tail)
-		}
-
 		for messages != nil {
 			select {
 			case <-cn.CloseNotify():
@@ -99,14 +93,6 @@ func NewLogHandlerFunc(requestor Requester, timeout time.Duration) http.HandlerF
 				}
 
 				flusher.Flush()
-
-				if logRequest.Tail > 0 {
-					sent++
-					if sent >= logRequest.Tail {
-						log.Printf("LogHandler: reached message tail '%d'\n", logRequest.Tail)
-						return
-					}
-				}
 			}
 		}
 
