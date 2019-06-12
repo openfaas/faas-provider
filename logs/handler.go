@@ -62,6 +62,11 @@ func NewLogHandlerFunc(requestor Requester, timeout time.Duration) http.HandlerF
 		w.WriteHeader(http.StatusOK)
 		flusher.Flush()
 
+		// ensure that we always try to send the closing chunk, not the inverted order due to how
+		// the defer stack works
+		defer flusher.Flush()
+		defer w.Write([]byte{})
+
 		sent := 0
 		jsonEncoder := json.NewEncoder(w)
 
