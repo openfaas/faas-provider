@@ -53,10 +53,12 @@ Example of v2 provider bootstrap:
 ```go
 import bootstrap "github.com/openfaas/faas-provider/bootstrap/v2"
 
+env := bootstrap.EnvReader{}
+
 config := bootstrap.ApiServerConfig{
-	ReadTimeout:  cfg.ReadTimeout,
-	WriteTimeout: cfg.WriteTimeout,
-	TCPPort:      &port,
+	ReadTimeout:  env.ParseDuration("read_timeout", time.Second*10),
+	WriteTimeout: env.ParseDuration("write_timeout", time.Second*10),
+	TCPPort:      env.ParseInt("port", 8080),
 	EnableHealth: true,
 }
 
@@ -73,7 +75,7 @@ handlers = bootstrap.ApiServerHandlers{
 	SecretHandler:  handlers.MakeSecretHandler(namespace, clientset),
 }
 
-srv := bootstrap.NewApiServer(config, handlers, nil)
+srv := bootstrap.NewApiServer(config, handlers)
 
 log.Fatal(srv.ListenAndServe())
 ```
