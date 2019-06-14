@@ -25,25 +25,30 @@ For an example see the [server.go](https://github.com/openfaas/faas-netes/blob/m
 I.e.:
 
 ```go
-	bootstrapHandlers := bootTypes.FaaSHandlers{
-		FunctionProxy:  handlers.MakeProxy(),
-		DeleteHandler:  handlers.MakeDeleteHandler(clientset),
-		DeployHandler:  handlers.MakeDeployHandler(clientset),
-		FunctionReader: handlers.MakeFunctionReader(clientset),
-		ReplicaReader:  handlers.MakeReplicaReader(clientset),
-		ReplicaUpdater: handlers.MakeReplicaUpdater(clientset),
-		InfoHandler:    handlers.MakeInfoHandler(),
-	}
+import (
+	bootTypes "github.com/openfaas/faas-provider/types/v1"
+	bootstrap "github.com/openfaas/faas-provider/bootstrap/v1"
+)
 
-	var port int
-	port = 8080
-	bootstrapConfig := bootTypes.FaaSConfig{
-		ReadTimeout:  time.Second * 8,
-		WriteTimeout: time.Second * 8,
-		TCPPort:      &port,
-	}
+bootstrapHandlers := bootTypes.FaaSHandlers{
+    FunctionProxy:  handlers.MakeProxy(),
+    DeleteHandler:  handlers.MakeDeleteHandler(clientset),
+    DeployHandler:  handlers.MakeDeployHandler(clientset),
+    FunctionReader: handlers.MakeFunctionReader(clientset),
+    ReplicaReader:  handlers.MakeReplicaReader(clientset),
+    ReplicaUpdater: handlers.MakeReplicaUpdater(clientset),
+    InfoHandler:    handlers.MakeInfoHandler(),
+}
 
-	bootstrap.Serve(&bootstrapHandlers, &bootstrapConfig)
+var port int
+port = 8080
+bootstrapConfig := bootTypes.FaaSConfig{
+    ReadTimeout:  time.Second * 8,
+    WriteTimeout: time.Second * 8,
+    TCPPort:      &port,
+}
+
+bootstrap.Serve(&bootstrapHandlers, &bootstrapConfig)
 ```
 
 ### Upgrade to OpenFaaS provider v2 packages
