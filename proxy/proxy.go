@@ -112,7 +112,7 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	pathVars := mux.Vars(originalReq)
 	functionName := pathVars["name"]
 	if functionName == "" {
-		httputils.ErrorF(w, http.StatusBadRequest, errMissingFunctionName)
+		httputils.Errorf(w, http.StatusBadRequest, errMissingFunctionName)
 		return
 	}
 
@@ -120,13 +120,13 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	if resolveErr != nil {
 		// TODO: Should record the 404/not found error in Prometheus.
 		log.Printf("resolver error: cannot find %s: %s\n", functionName, resolveErr.Error())
-		httputils.ErrorF(w, http.StatusNotFound, "Cannot find service: %s.", functionName)
+		httputils.Errorf(w, http.StatusNotFound, "Cannot find service: %s.", functionName)
 		return
 	}
 
 	proxyReq, err := buildProxyRequest(originalReq, functionAddr, pathVars["params"])
 	if err != nil {
-		httputils.ErrorF(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
+		httputils.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 		return
 	}
 	if proxyReq.Body != nil {
@@ -140,7 +140,7 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	if err != nil {
 		log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
 
-		httputils.ErrorF(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
+		httputils.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
 		return
 	}
 
