@@ -46,6 +46,38 @@ I.e.:
 	bootstrap.Serve(&bootstrapHandlers, &bootstrapConfig)
 ```
 
+### Upgrade to OpenFaaS provider v2 packages
+
+Example of v2 provider bootstrap:
+
+```go
+import bootstrap "github.com/openfaas/faas-provider/bootstrap/v2"
+
+config := bootstrap.ApiServerConfig{
+	ReadTimeout:  cfg.ReadTimeout,
+	WriteTimeout: cfg.WriteTimeout,
+	TCPPort:      &port,
+	EnableHealth: true,
+}
+
+handlers = bootstrap.ApiServerHandlers{
+	FunctionProxy:  handlers.MakeProxy(namespace, config.ReadTimeout),
+	DeleteHandler:  handlers.MakeDeleteHandler(namespace, clientset),
+	DeployHandler:  handlers.MakeDeployHandler(namespace, factory),
+	FunctionReader: handlers.MakeFunctionReader(namespace, clientset),
+	ReplicaReader:  handlers.MakeReplicaReader(namespace, clientset),
+	ReplicaUpdater: handlers.MakeReplicaUpdater(namespace, clientset),
+	UpdateHandler:  handlers.MakeUpdateHandler(namespace, factory),
+	HealthHandler:  handlers.MakeHealthHandler(),
+	InfoHandler:    handlers.MakeInfoHandler(version.BuildVersion(), version.GitCommit),
+	SecretHandler:  handlers.MakeSecretHandler(namespace, clientset),
+}
+
+srv := bootstrap.NewApiServer(config, handlers, nil)
+
+log.Fatal(srv.ListenAndServe())
+```
+
 ### Need help?
 
 Join `#faas-provider` on [OpenFaaS Slack](https://docs.openfaas.com/community/)
