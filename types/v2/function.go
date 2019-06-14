@@ -9,7 +9,7 @@ type Function struct {
 	Service string `json:"service"`
 
 	// ServiceAccount represents the identity of the function for the orchestration layer
-	ServiceAccount string `json:"serviceAccount"`
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 
 	// Image corresponds to a container image
 	Image string `json:"image"`
@@ -53,13 +53,13 @@ type Function struct {
 	ReadOnlyRootFilesystem bool `json:"readOnlyRootFilesystem"`
 
 	// FunctionHealthCheck represents the custom HTTP health-check path and check initial delay
-	HealthCheck *FunctionHealthCheck `json:"healthCheck"`
+	HealthCheck *FunctionHealthCheck `json:"healthCheck,omitempty"`
 
 	// Scaling represents the minimum (initial), maximum replica count and scaling factor
-	Scaling *FunctionScaling `json:"scaling"`
+	Scaling *FunctionScaling `json:"scaling,omitempty"`
 
 	// FunctionTopic defines the MQ topics that this function is subscribed to
-	Topics []FunctionTopic `json:"topics"`
+	Topics []FunctionTopic `json:"topics,omitempty"`
 }
 
 // FunctionResources represents CPU and memory resources for an OpenFaaS function
