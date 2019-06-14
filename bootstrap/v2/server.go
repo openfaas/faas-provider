@@ -27,7 +27,7 @@ handlers = bootstrap.ApiServerHandlers{
 	SecretHandler:  handlers.MakeSecretHandler(functionNamespace, clientset),
 }
 
-srv := bootstrap.NewApiServer(config, handlers, nil)
+srv := bootstrap.NewApiServer(config, handlers)
 
 log.Fatal(srv.ListenAndServe())
 
@@ -46,20 +46,17 @@ import (
 
 // ApiServer represents the OpenFaaS API
 type ApiServer struct {
-	router   *mux.Router
+	Router   *mux.Router
 	handlers ApiServerHandlers
 	config   ApiServerConfig
 }
 
-// NewApiServer return an OpenFaaS API server
-func NewApiServer(config ApiServerConfig, handlers ApiServerHandlers, router *mux.Router) *ApiServer {
-	if router == nil {
-		router = mux.NewRouter()
-	}
+// NewApiServer returns an OpenFaaS API server
+func NewApiServer(config ApiServerConfig, handlers ApiServerHandlers) *ApiServer {
 	return &ApiServer{
 		config:   config,
 		handlers: handlers,
-		router:   router,
+		Router:   mux.NewRouter(),
 	}
 }
 
@@ -87,24 +84,24 @@ func (srv *ApiServer) ListenAndServe() error {
 	}
 
 	// System (auth) endpoints
-	srv.router.HandleFunc("/system/functions", srv.handlers.FunctionReader).Methods("GET")
-	srv.router.HandleFunc("/system/functions", srv.handlers.DeployHandler).Methods("POST")
-	srv.router.HandleFunc("/system/functions", srv.handlers.DeleteHandler).Methods("DELETE")
-	srv.router.HandleFunc("/system/functions", srv.handlers.UpdateHandler).Methods("PUT")
+	srv.Router.HandleFunc("/system/functions", srv.handlers.FunctionReader).Methods("GET")
+	srv.Router.HandleFunc("/system/functions", srv.handlers.DeployHandler).Methods("POST")
+	srv.Router.HandleFunc("/system/functions", srv.handlers.DeleteHandler).Methods("DELETE")
+	srv.Router.HandleFunc("/system/functions", srv.handlers.UpdateHandler).Methods("PUT")
 
-	srv.router.HandleFunc("/system/function/{name:[-a-zA-Z_0-9]+}", srv.handlers.ReplicaReader).Methods("GET")
-	srv.router.HandleFunc("/system/scale-function/{name:[-a-zA-Z_0-9]+}", srv.handlers.ReplicaUpdater).Methods("POST")
-	srv.router.HandleFunc("/system/info", srv.handlers.InfoHandler).Methods("GET")
+	srv.Router.HandleFunc("/system/function/{name:[-a-zA-Z_0-9]+}", srv.handlers.ReplicaReader).Methods("GET")
+	srv.Router.HandleFunc("/system/scale-function/{name:[-a-zA-Z_0-9]+}", srv.handlers.ReplicaUpdater).Methods("POST")
+	srv.Router.HandleFunc("/system/info", srv.handlers.InfoHandler).Methods("GET")
 
-	srv.router.HandleFunc("/system/secrets", srv.handlers.SecretHandler).Methods(http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete)
+	srv.Router.HandleFunc("/system/secrets", srv.handlers.SecretHandler).Methods(http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete)
 
 	// Open endpoints
-	srv.router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", srv.handlers.FunctionProxy)
-	srv.router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", srv.handlers.FunctionProxy)
-	srv.router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", srv.handlers.FunctionProxy)
+	srv.Router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", srv.handlers.FunctionProxy)
+	srv.Router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", srv.handlers.FunctionProxy)
+	srv.Router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", srv.handlers.FunctionProxy)
 
 	if srv.config.EnableHealth {
-		srv.router.HandleFunc("/healthz", srv.handlers.Health).Methods("GET")
+		srv.Router.HandleFunc("/healthz", srv.handlers.Health).Methods("GET")
 	}
 
 	s := &http.Server{
@@ -112,7 +109,7 @@ func (srv *ApiServer) ListenAndServe() error {
 		ReadTimeout:    srv.config.ReadTimeout,
 		WriteTimeout:   srv.config.WriteTimeout,
 		MaxHeaderBytes: http.DefaultMaxHeaderBytes, // 1MB - can be overridden by setting Server.MaxHeaderBytes.
-		Handler:        srv.router,
+		Handler:        srv.Router,
 	}
 
 	return s.ListenAndServe()
