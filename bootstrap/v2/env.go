@@ -32,7 +32,7 @@ func (*EnvReader) ParseInt(key string, fallback int) int {
 	return fallback
 }
 
-func (*EnvReader) ParseIntOrDuration(key string, fallback time.Duration) time.Duration {
+func (*EnvReader) ParseDuration(key string, fallback time.Duration) time.Duration {
 	val := os.Getenv(key)
 	if len(val) > 0 {
 		parsedVal, parseErr := strconv.Atoi(val)
