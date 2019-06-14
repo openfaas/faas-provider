@@ -1,7 +1,7 @@
 // Copyright (c) Alex Ellis 2017. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-package bootstrap
+package v1
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/openfaas/faas-provider/auth"
-	"github.com/openfaas/faas-provider/types"
+	auth "github.com/openfaas/faas-provider/auth/v1"
+	types "github.com/openfaas/faas-provider/types/v1"
 )
 
 var r *mux.Router

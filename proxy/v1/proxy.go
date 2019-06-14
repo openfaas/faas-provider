@@ -18,7 +18,7 @@
 // 		}
 //
 // proxy.NewHandlerFunc is optional, but does simplify the logic of your provider.
-package proxy
+package v1
 
 import (
 	"fmt"
