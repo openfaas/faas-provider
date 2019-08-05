@@ -83,3 +83,9 @@ type FunctionStatus struct {
 	// backend for management, orchestration, events and build tasks
 	Annotations *map[string]string `json:"annotations"`
 }
+
+// Secret for underlying orchestrator
+type Secret struct {
+	Name  string `json:"name"`
+	Value string `json:"value,omitempty"`
+}
