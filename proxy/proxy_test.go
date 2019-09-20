@@ -14,6 +14,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const NameExpression = "-a-zA-Z_0-9."
+
 func varHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.WriteHeader(http.StatusOK)
@@ -95,6 +97,13 @@ func Test_pathParsing(t *testing.T) {
 			200,
 		},
 		{
+			"simple_name_match",
+			"/function/echo.openfaas-fn",
+			"echo.openfaas-fn",
+			"",
+			200,
+		},
+		{
 			"simple_name_match_with_trailing_slash",
 			"/function/echo/",
 			"echo",
@@ -126,9 +135,9 @@ func Test_pathParsing(t *testing.T) {
 
 	// Need to create a router that we can pass the request through so that the vars will be added to the context
 	router := mux.NewRouter()
-	router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}", varHandler)
-	router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/", varHandler)
-	router.HandleFunc("/function/{name:[-a-zA-Z_0-9]+}/{params:.*}", varHandler)
+	router.HandleFunc("/function/{name:["+NameExpression+"]+}", varHandler)
+	router.HandleFunc("/function/{name:["+NameExpression+"]+}/", varHandler)
+	router.HandleFunc("/function/{name:["+NameExpression+"]+}/{params:.*}", varHandler)
 
 	for _, s := range tt {
 		t.Run(s.name, func(t *testing.T) {
