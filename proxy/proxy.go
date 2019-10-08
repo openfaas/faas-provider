@@ -143,6 +143,7 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 		httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
 		return
 	}
+	defer response.Body.Close()
 
 	log.Printf("%s took %f seconds\n", functionName, seconds.Seconds())
 
