@@ -20,6 +20,7 @@ func Test_AuthWithValidPassword_Gives200(t *testing.T) {
 	wantUser := "admin"
 	wantPassword := "password"
 	r := httptest.NewRequest(http.MethodGet, "http://localhost:8080", nil)
+
 	r.SetBasicAuth(wantUser, wantPassword)
 	wantCredentials := &BasicAuthCredentials{
 		User:     wantUser,
@@ -33,6 +34,13 @@ func Test_AuthWithValidPassword_Gives200(t *testing.T) {
 
 	if w.Code != wantCode {
 		t.Errorf("status code, want: %d, got: %d", wantCode, w.Code)
+		t.Fail()
+	}
+
+	gotAuth := w.Header().Get("WWW-Authenticate")
+	wantAuth := ``
+	if gotAuth != wantAuth {
+		t.Errorf("WWW-Authenticate, want: %s, got: %s", wantAuth, gotAuth)
 		t.Fail()
 	}
 }
@@ -61,6 +69,13 @@ func Test_AuthWithInvalidPassword_Gives403(t *testing.T) {
 	wantCode := http.StatusUnauthorized
 	if w.Code != wantCode {
 		t.Errorf("status code, want: %d, got: %d", wantCode, w.Code)
+		t.Fail()
+	}
+
+	gotAuth := w.Header().Get("WWW-Authenticate")
+	wantAuth := `Basic realm="Restricted"`
+	if gotAuth != wantAuth {
+		t.Errorf("WWW-Authenticate, want: %s, got: %s", wantAuth, gotAuth)
 		t.Fail()
 	}
 }
