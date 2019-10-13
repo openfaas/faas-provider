@@ -63,7 +63,7 @@ func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.Hand
 		panic("NewHandlerFunc: empty proxy handler resolver, cannot be nil")
 	}
 
-	proxyClient := NewProxyClient(config)
+	proxyClient := NewProxyClientFromConfig(config)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
@@ -85,7 +85,9 @@ func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.Hand
 	}
 }
 
-func NewProxyClient(config types.FaaSConfig) *http.Client {
+// NewProxyClientFromConfig creates a new http.Client designed for proxying requests and enforcing
+// certain minimum configuration values.
+func NewProxyClientFromConfig(config types.FaaSConfig) *http.Client {
 	maxIdleConns := config.MaxIdleConns
 	if maxIdleConns < 1 {
 		maxIdleConns = 1024
@@ -101,6 +103,12 @@ func NewProxyClient(config types.FaaSConfig) *http.Client {
 		timeout = 10 * time.Second
 	}
 
+	return NewProxyClient(timeout, maxIdleConns, maxIdleConnsPerHost)
+}
+
+// NewProxyClient creates a new http.Client designed for proxying requests, this is exposed as a
+// convenience method for internal or advanced uses. Most people should use NewProxyClientFromConfig.
+func NewProxyClient(timeout time.Duration, maxIdleConns int, maxIdleConnsPerHost int) *http.Client {
 	return &http.Client{
 		// these Transport values ensure that the http Client will eventually timeout and prevents
 		// infinite retries. The default http.Client configure these timeouts.  The specific
