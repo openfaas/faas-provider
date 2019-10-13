@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/openfaas/faas-provider/types"
 )
 
 type testBaseURLResolver struct {
@@ -36,7 +37,8 @@ func Test_NewHandlerFunc_Panic(t *testing.T) {
 		}
 	}()
 
-	NewHandlerFunc(time.Second, nil)
+	config := types.FaaSConfig{ReadTimeout: time.Second}
+	NewHandlerFunc(config, nil)
 }
 
 func Test_NewHandlerFunc_NoPanic(t *testing.T) {
@@ -46,15 +48,16 @@ func Test_NewHandlerFunc_NoPanic(t *testing.T) {
 		}
 	}()
 
-	proxyFunc := NewHandlerFunc(time.Second, &testBaseURLResolver{})
+	config := types.FaaSConfig{ReadTimeout: time.Second}
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 	if proxyFunc == nil {
 		t.Errorf("proxy handler func is nil")
 	}
 }
 
 func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
-
-	proxyFunc := NewHandlerFunc(time.Second, &testBaseURLResolver{})
+	config := types.FaaSConfig{ReadTimeout: time.Second}
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 
 	nonAllowedMethods := []string{
 		http.MethodHead, http.MethodConnect, http.MethodOptions, http.MethodTrace,
@@ -74,7 +77,8 @@ func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 }
 
 func Test_ProxyHandler_MissingFunctionNameError(t *testing.T) {
-	proxyFunc := NewHandlerFunc(time.Second, &testBaseURLResolver{"", nil})
+	config := types.FaaSConfig{ReadTimeout: time.Second}
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", nil})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
@@ -97,7 +101,9 @@ func Test_ProxyHandler_ResolveError(t *testing.T) {
 	log.SetOutput(logs)
 
 	resolveErr := errors.New("can not find test service `foo`")
-	proxyFunc := NewHandlerFunc(time.Second, &testBaseURLResolver{"", resolveErr})
+
+	config := types.FaaSConfig{ReadTimeout: time.Second}
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", resolveErr})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)

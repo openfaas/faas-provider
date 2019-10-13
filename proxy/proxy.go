@@ -30,6 +30,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/openfaas/faas-provider/httputil"
+	"github.com/openfaas/faas-provider/types"
 )
 
 const (
@@ -57,33 +58,12 @@ type BaseURLResolver interface {
 // 	- logging errors and proxy request timing to stdout
 //
 // Note that this will panic if `resolver` is nil.
-func NewHandlerFunc(timeout time.Duration, resolver BaseURLResolver) http.HandlerFunc {
+func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.HandlerFunc {
 	if resolver == nil {
 		panic("NewHandlerFunc: empty proxy handler resolver, cannot be nil")
 	}
 
-	proxyClient := http.Client{
-		// these Transport values ensure that the http Client will eventually timeout and prevents
-		// infinite retries. The default http.Client configure these timeouts.  The specific
-		// values tuned via performance testing/benchmarking
-		//
-		// Additional context can be found at
-		// - https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
-		// - https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   timeout,
-				KeepAlive: 1 * time.Second,
-			}).DialContext,
-			IdleConnTimeout:       120 * time.Millisecond,
-			ExpectContinueTimeout: 1500 * time.Millisecond,
-		},
-		Timeout: timeout,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
+	proxyClient := NewProxyClient(config)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
@@ -105,8 +85,59 @@ func NewHandlerFunc(timeout time.Duration, resolver BaseURLResolver) http.Handle
 	}
 }
 
+func NewProxyClient(config types.FaaSConfig) *http.Client {
+	maxIdleConns := config.MaxIdleConns
+	if maxIdleConns < 1 {
+		maxIdleConns = 1024
+	}
+
+	maxIdleConnsPerHost := config.MaxIdleConnsPerHost
+	if maxIdleConnsPerHost < 1 {
+		maxIdleConnsPerHost = 1024
+	}
+
+	timeout := config.ReadTimeout
+	if timeout <= 0*time.Second {
+		timeout = 10 * time.Second
+	}
+
+	return &http.Client{
+		// these Transport values ensure that the http Client will eventually timeout and prevents
+		// infinite retries. The default http.Client configure these timeouts.  The specific
+		// values tuned via performance testing/benchmarking
+		//
+		// Additional context can be found at
+		// - https://medium.com/@nate510/don-t-use-go-s-default-http-client-4804cb19f779
+		// - https://blog.cloudflare.com/the-complete-guide-to-golang-net-http-timeouts/
+		//
+		// Additionally, these overrides for the default client enable re-use of connections and prevent
+		// CoreDNS from rate limiting under high traffic
+		//
+		// See also two similar projects where this value was updated:
+		// https://github.com/prometheus/prometheus/pull/3592
+		// https://github.com/minio/minio/pull/5860
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   timeout,
+				KeepAlive: 1 * time.Second,
+				DualStack: true,
+			}).DialContext,
+			MaxIdleConns:          maxIdleConns,
+			MaxIdleConnsPerHost:   maxIdleConnsPerHost,
+			IdleConnTimeout:       120 * time.Millisecond,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1500 * time.Millisecond,
+		},
+		Timeout: timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+}
+
 // proxyRequest handles the actual resolution of and then request to the function service.
-func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient http.Client, resolver BaseURLResolver) {
+func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient *http.Client, resolver BaseURLResolver) {
 	ctx := originalReq.Context()
 
 	pathVars := mux.Vars(originalReq)

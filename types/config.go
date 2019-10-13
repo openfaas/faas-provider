@@ -30,10 +30,21 @@ type FaaSHandlers struct {
 
 // FaaSConfig set config for HTTP handlers
 type FaaSConfig struct {
-	TCPPort         *int
-	ReadTimeout     time.Duration
-	WriteTimeout    time.Duration
-	EnableHealth    bool
+	// TCPPort is the public port for the API.
+	TCPPort *int
+	// HTTP timeout for reading a request from clients.
+	ReadTimeout time.Duration
+	// HTTP timeout for writing a response from functions.
+	WriteTimeout time.Duration
+	// EnableHealth enables/disables the default health endpoint bound to "/healthz".
+	EnableHealth bool
+	// EnableBasicAuth enforces basic auth on the API. If set, reads secrets from file-system
+	// location specificed in `SecretMountPath`.
 	EnableBasicAuth bool
+	// SecretMountPath specifies where to read secrets from for embedded basic auth.
 	SecretMountPath string
+	// MaxIdleConns with a default value of 1024, can be used for tuning HTTP proxy performance.
+	MaxIdleConns int
+	// MaxIdleConnsPerHost with a default value of 1024, can be used for tuning HTTP proxy performance.
+	MaxIdleConnsPerHost int
 }
