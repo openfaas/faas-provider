@@ -479,7 +479,7 @@ func Test_NewProxyClientConfig(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := NewProxyClient(tc.config)
+			client := NewProxyClientFromConfig(tc.config)
 			if client.Timeout != tc.timeout {
 				t.Fatalf("expected timeout %s, got %s", tc.timeout.String(), client.Timeout.String())
 			}
