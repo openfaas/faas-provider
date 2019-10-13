@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/openfaas/faas-provider/types"
 )
 
 const NameExpression = "-a-zA-Z_0-9."
@@ -44,6 +45,7 @@ func (m mockResolver) Resolve(name string) (url.URL, error) {
 func Test_ProxyHandler_StatusCode(t *testing.T) {
 
 	testcases := []int{200, 204, 400, 409, 422, 500, 503}
+	config := types.FaaSConfig{ReadTimeout: time.Second}
 
 	for _, tc := range testcases {
 		t.Run(fmt.Sprintf("returns %d when upstream returns %d", tc, tc), func(t *testing.T) {
@@ -58,7 +60,7 @@ func Test_ProxyHandler_StatusCode(t *testing.T) {
 			}))
 
 			u, err := url.Parse(upstream.URL)
-			proxyHandler := NewHandlerFunc(time.Second, mockResolver{u, err})
+			proxyHandler := NewHandlerFunc(config, mockResolver{u, err})
 
 			rr := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "", nil)
@@ -445,4 +447,50 @@ func Test_buildProxyRequest_WithPathAndQuery(t *testing.T) {
 		t.Fail()
 	}
 
+}
+
+func Test_NewProxyClientConfig(t *testing.T) {
+	cases := []struct {
+		name                string
+		config              types.FaaSConfig
+		timeout             time.Duration
+		maxIdleConns        int
+		maxIdleConnsPerHost int
+	}{
+		{
+			name:                "empty config sets default values",
+			config:              types.FaaSConfig{},
+			timeout:             10 * time.Second,
+			maxIdleConns:        1024,
+			maxIdleConnsPerHost: 1024,
+		},
+		{
+			name: "custom values are set correctly",
+			config: types.FaaSConfig{
+				ReadTimeout:         1 * time.Microsecond,
+				MaxIdleConns:        20,
+				MaxIdleConnsPerHost: 10,
+			},
+			timeout:             1 * time.Microsecond,
+			maxIdleConns:        20,
+			maxIdleConnsPerHost: 10,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := NewProxyClient(tc.config)
+			if client.Timeout != tc.timeout {
+				t.Fatalf("expected timeout %s, got %s", tc.timeout.String(), client.Timeout.String())
+			}
+			transport := (client.Transport).(*http.Transport)
+			if transport.MaxIdleConns != tc.maxIdleConns {
+				t.Fatalf("expected MaxIdleConns %d, got %d", tc.maxIdleConns, transport.MaxIdleConns)
+			}
+
+			if transport.MaxIdleConnsPerHost != tc.maxIdleConnsPerHost {
+				t.Fatalf("expected MaxIdleConnsPerHost %d, got %d", tc.maxIdleConnsPerHost, transport.MaxIdleConnsPerHost)
+			}
+		})
+	}
 }
