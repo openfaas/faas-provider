@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	defaultReadTimeout  = 10 * time.Second
+	defaultMaxIdleConns = 1024
+)
+
 // FaaSHandlers provide handlers for OpenFaaS
 type FaaSHandlers struct {
 	// FunctionProxy provides the function invocation proxy logic.  Use proxy.NewHandlerFunc to
@@ -47,4 +52,31 @@ type FaaSConfig struct {
 	MaxIdleConns int
 	// MaxIdleConnsPerHost with a default value of 1024, can be used for tuning HTTP proxy performance.
 	MaxIdleConnsPerHost int
+}
+
+// GetReadTimeout is a helper to safely return the configured ReadTimeout or the default value of 10s
+func (c *FaaSConfig) GetReadTimeout() time.Duration {
+	if c.ReadTimeout <= 0*time.Second {
+		return defaultReadTimeout
+	}
+	return c.ReadTimeout
+}
+
+// GetMaxIdleConns is a helper to safely return the configured MaxIdleConns or the default value of 1024
+func (c *FaaSConfig) GetMaxIdleConns() int {
+	if c.MaxIdleConns < 1 {
+		return defaultMaxIdleConns
+	}
+
+	return c.MaxIdleConns
+}
+
+// GetMaxIdleConns is a helper to safely return the configured MaxIdleConns or the default value which
+// should then match the MaxIdleConns
+func (c *FaaSConfig) GetMaxIdleConnsPerHost() int {
+	if c.MaxIdleConnsPerHost < 1 {
+		return c.GetMaxIdleConns()
+	}
+
+	return c.MaxIdleConnsPerHost
 }
