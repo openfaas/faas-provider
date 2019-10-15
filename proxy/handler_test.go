@@ -37,7 +37,7 @@ func Test_NewHandlerFunc_Panic(t *testing.T) {
 		}
 	}()
 
-	config := types.FaaSConfig{ReadTimeout: time.Second}
+	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
 	NewHandlerFunc(config, nil)
 }
 
@@ -48,7 +48,7 @@ func Test_NewHandlerFunc_NoPanic(t *testing.T) {
 		}
 	}()
 
-	config := types.FaaSConfig{ReadTimeout: time.Second}
+	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 	if proxyFunc == nil {
 		t.Errorf("proxy handler func is nil")
@@ -56,7 +56,7 @@ func Test_NewHandlerFunc_NoPanic(t *testing.T) {
 }
 
 func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
-	config := types.FaaSConfig{ReadTimeout: time.Second}
+	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 
 	nonAllowedMethods := []string{
@@ -77,7 +77,7 @@ func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 }
 
 func Test_ProxyHandler_MissingFunctionNameError(t *testing.T) {
-	config := types.FaaSConfig{ReadTimeout: time.Second}
+	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", nil})
 
 	w := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func Test_ProxyHandler_ResolveError(t *testing.T) {
 
 	resolveErr := errors.New("can not find test service `foo`")
 
-	config := types.FaaSConfig{ReadTimeout: time.Second}
+	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", resolveErr})
 
 	w := httptest.NewRecorder()

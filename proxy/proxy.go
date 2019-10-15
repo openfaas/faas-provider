@@ -88,22 +88,7 @@ func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.Hand
 // NewProxyClientFromConfig creates a new http.Client designed for proxying requests and enforcing
 // certain minimum configuration values.
 func NewProxyClientFromConfig(config types.FaaSConfig) *http.Client {
-	maxIdleConns := config.MaxIdleConns
-	if maxIdleConns < 1 {
-		maxIdleConns = 1024
-	}
-
-	maxIdleConnsPerHost := config.MaxIdleConnsPerHost
-	if maxIdleConnsPerHost < 1 {
-		maxIdleConnsPerHost = 1024
-	}
-
-	timeout := config.ReadTimeout
-	if timeout <= 0*time.Second {
-		timeout = 10 * time.Second
-	}
-
-	return NewProxyClient(timeout, maxIdleConns, maxIdleConnsPerHost)
+	return NewProxyClient(config.GetReadTimeout(), config.GetMaxIdleConns(), config.GetMaxIdleConnsPerHost())
 }
 
 // NewProxyClient creates a new http.Client designed for proxying requests, this is exposed as a
