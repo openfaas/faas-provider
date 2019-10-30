@@ -131,6 +131,21 @@ func TestRead_BasicAuth_SetTrue(t *testing.T) {
 	}
 }
 
+func TestRead_EnableHealth_Ignored(t *testing.T) {
+	defaults := NewEnvBucket()
+	defaults.Setenv("enable_health", "true")
+
+	readConfig := ReadConfig{}
+	config, err := readConfig.Read(defaults)
+	if err != nil {
+		t.Fatalf("unexpected error while reading config")
+	}
+
+	if config.EnableBasicAuth != false {
+		t.Fatalf("config.EnableHealth, is deprecated but got: %t\n", config.EnableBasicAuth)
+	}
+}
+
 func TestRead_MaxIdleConnsDefaults(t *testing.T) {
 	defaults := NewEnvBucket()
 
