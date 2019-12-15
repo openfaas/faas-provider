@@ -19,7 +19,7 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 	defer goleak.VerifyNoLeaks(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0"},
+		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
 		Message{Name: "funcFoo", Text: "msg 1"},
 	}
 
@@ -54,7 +54,7 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 	defer goleak.VerifyNoLeaks(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0"},
+		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
 		Message{Name: "funcFoo", Text: "msg 1"},
 	}
 
@@ -104,12 +104,6 @@ func Test_GETRequestParsing(t *testing.T) {
 			expectedRequest: Request{Name: "foobar"},
 		},
 		{
-			name:            "name only query",
-			rawQueryStr:     "name=foobar",
-			err:             "",
-			expectedRequest: Request{Name: "foobar"},
-		},
-		{
 			name:            "multiple name values selects the last value",
 			rawQueryStr:     "name=foobar&name=theactual name",
 			err:             "",
@@ -117,13 +111,14 @@ func Test_GETRequestParsing(t *testing.T) {
 		},
 		{
 			name:        "valid request with every parameter",
-			rawQueryStr: "name=foobar&since=2019-02-16T09%3A10%3A06%2B00%3A00&tail=5&follow=true",
+			rawQueryStr: "name=foobar&since=2019-02-16T09%3A10%3A06%2B00%3A00&tail=5&follow=true&namespace=default",
 			err:         "",
 			expectedRequest: Request{
-				Name:   "foobar",
-				Since:  &sinceTime,
-				Tail:   5,
-				Follow: true,
+				Name:      "foobar",
+				Namespace: "default",
+				Since:     &sinceTime,
+				Tail:      5,
+				Follow:    true,
 			},
 		},
 	}

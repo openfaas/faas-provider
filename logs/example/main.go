@@ -30,6 +30,7 @@ func (s staticLogRequestor) Query(ctx context.Context, r logs.Request) (<-chan l
 
 			resp <- logs.Message{
 				Name:      r.Name,
+				Namespace: r.Namespace,
 				Instance:  "fake",
 				Timestamp: time.Now(),
 				Text:      m,
