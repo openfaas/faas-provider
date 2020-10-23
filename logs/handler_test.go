@@ -16,11 +16,11 @@ import (
 var queryTimeout = 30 * time.Second
 
 func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
-		Message{Name: "funcFoo", Text: "msg 1"},
+		{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
+		{Name: "funcFoo", Text: "msg 1"},
 	}
 
 	var expected bytes.Buffer
@@ -51,11 +51,11 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 }
 
 func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
-		Message{Name: "funcFoo", Text: "msg 1"},
+		{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
+		{Name: "funcFoo", Text: "msg 1"},
 	}
 
 	querier := newFakeQueryRequester(msgs, nil)
@@ -73,14 +73,22 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 		t.Fatalf("unexpected error sending log request: %s", err)
 	}
 
+	errs := make(chan error, 1)
 	go func() {
 		defer resp.Body.Close()
 		_, err := ioutil.ReadAll(resp.Body)
 		if err != context.Canceled {
-			t.Fatalf("unexpected error reading log response: %s", err)
+			errs <- err
+		} else {
+			errs <- nil
 		}
 	}()
 	cancel()
+
+	err = <-errs
+	if err != nil {
+		t.Fatalf("unexpected error reading log response: %s", err)
+	}
 }
 
 func Test_GETRequestParsing(t *testing.T) {
