@@ -16,7 +16,7 @@ import (
 var queryTimeout = 30 * time.Second
 
 func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
 		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
@@ -51,7 +51,7 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 }
 
 func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.T) {
-	defer goleak.VerifyNoLeaks(t)
+	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
 		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
