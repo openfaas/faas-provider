@@ -295,6 +295,40 @@ func Test_buildProxyRequest_XForwardedHostHeader_WhenAlreadyPresent(t *testing.T
 	}
 }
 
+func Test_proxyRequest_ContentType_Header(t *testing.T) {
+	const requestContentType = "x-www-form-urlencoded"
+	const wantContentType = "application/json"
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/function/figlet", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = mux.SetURLVars(req, map[string]string{"name": "figlet"})
+	req.Header.Set("Content-Type", requestContentType)
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Content-Type set in the function response
+		w.Header().Set("Content-Type", wantContentType)
+	}))
+	defer upstream.Close()
+
+	config := types.FaaSConfig{ReadTimeout: 1 * time.Second}
+
+	u, err := url.Parse(upstream.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	proxyHandler := NewHandlerFunc(config, mockResolver{u, err})
+
+	proxyHandler.ServeHTTP(rr, req)
+
+	got := rr.Header().Get("Content-Type")
+	if got != wantContentType {
+		t.Errorf("Want Content-Type %q, got: %q", wantContentType, got)
+	}
+}
+
 func Test_buildProxyRequest_WithPathNoQuery(t *testing.T) {
 	srcBytes := []byte("hello world")
 	functionPath := "/employee/info/300"
