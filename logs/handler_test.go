@@ -19,8 +19,8 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
-		Message{Name: "funcFoo", Text: "msg 1"},
+		{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
+		{Name: "funcFoo", Text: "msg 1"},
 	}
 
 	var expected bytes.Buffer
@@ -54,8 +54,8 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 	defer goleak.VerifyNone(t)
 
 	msgs := []Message{
-		Message{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
-		Message{Name: "funcFoo", Text: "msg 1"},
+		{Name: "funcFoo", Text: "msg 0", Namespace: "default"},
+		{Name: "funcFoo", Text: "msg 1"},
 	}
 
 	querier := newFakeQueryRequester(msgs, nil)
