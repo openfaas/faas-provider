@@ -60,8 +60,8 @@ type FunctionResources struct {
 // FunctionStatus exported for system/functions endpoint
 type FunctionStatus struct {
 
-	// Service is the name of the function deployment
-	Service string `json:"service"`
+	// Name is the name of the function deployment
+	Name string `json:"name"`
 
 	// Image is a fully-qualified container image
 	Image string `json:"image"`
