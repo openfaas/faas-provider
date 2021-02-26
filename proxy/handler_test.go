@@ -60,7 +60,7 @@ func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 
 	nonAllowedMethods := []string{
-		http.MethodHead, http.MethodConnect, http.MethodTrace,
+		http.MethodConnect, http.MethodTrace,
 	}
 
 	for _, method := range nonAllowedMethods {
@@ -148,6 +148,7 @@ func Test_ProxyHandler_Proxy_Success(t *testing.T) {
 		http.MethodDelete,
 		http.MethodGet,
 		http.MethodOptions,
+		http.MethodHead,
 	}
 	for _, method := range nonAllowedMethods {
 		t.Run(method+" method is allowed", func(t *testing.T) {
