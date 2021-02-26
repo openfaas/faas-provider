@@ -60,7 +60,7 @@ func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
 
 	nonAllowedMethods := []string{
-		http.MethodHead, http.MethodConnect, http.MethodOptions, http.MethodTrace,
+		http.MethodHead, http.MethodConnect, http.MethodTrace,
 	}
 
 	for _, method := range nonAllowedMethods {
@@ -129,15 +129,38 @@ func Test_ProxyHandler_ResolveError(t *testing.T) {
 }
 
 func Test_ProxyHandler_Proxy_Success(t *testing.T) {
-	t.Skip("Test not implemented yet")
-	// testFuncService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	w.WriteHeader(http.StatusOK)
-	// }))
-	// proxyFunc := NewHandlerFunc(time.Second, &testBaseURLResolver{testFuncService.URL, nil})
+	testFuncService := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
 
-	// w := httptest.NewRecorder()
-	// req := httptest.NewRequest("GET", "http://example.com/foo", nil)
-	// req = mux.SetURLVars(req, map[string]string{"name": "foo"})
+	config := types.FaaSConfig{
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+	}
 
-	// proxyFunc(w, req)
+	serverURL := strings.TrimPrefix(testFuncService.URL, "http://")
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil})
+
+	nonAllowedMethods := []string{
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodGet,
+		http.MethodOptions,
+	}
+	for _, method := range nonAllowedMethods {
+		t.Run(method+" method is allowed", func(t *testing.T) {
+			w := httptest.NewRecorder()
+
+			req := httptest.NewRequest(method, "http://example.com/foo", nil)
+			req = mux.SetURLVars(req, map[string]string{"name": "foo"})
+
+			proxyFunc(w, req)
+			resp := w.Result()
+			if resp.StatusCode != http.StatusNoContent {
+				t.Errorf("expected status code `%d`, got `%d`", http.StatusNoContent, resp.StatusCode)
+			}
+		})
+	}
 }
