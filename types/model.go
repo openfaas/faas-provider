@@ -2,6 +2,14 @@ package types
 
 import "time"
 
+// Secret for underlying orchestrator
+type Secret struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
+	Value     string `json:"value,omitempty"`
+	RawValue  []byte `json:"rawValue,omitempty"`
+}
+
 // FunctionDeployment represents a request to create or update a Function.
 type FunctionDeployment struct {
 
@@ -44,13 +52,6 @@ type FunctionDeployment struct {
 	// ReadOnlyRootFilesystem removes write-access from the root filesystem
 	// mount-point.
 	ReadOnlyRootFilesystem bool `json:"readOnlyRootFilesystem,omitempty"`
-}
-
-// Secret for underlying orchestrator
-type Secret struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace,omitempty"`
-	Value     string `json:"value,omitempty"`
 }
 
 // FunctionResources Memory and CPU
