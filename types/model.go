@@ -4,10 +4,18 @@ import "time"
 
 // Secret for underlying orchestrator
 type Secret struct {
-	Name      string `json:"name"`
+	// Name of the secret
+	Name string `json:"name"`
+
+	// Namespace if applicable for the secret
 	Namespace string `json:"namespace,omitempty"`
-	Value     string `json:"value,omitempty"`
-	RawValue  []byte `json:"rawValue,omitempty"`
+
+	// Value is a string representing the string's value
+	Value string `json:"value,omitempty"`
+
+	// RawValue can be used to provide binary data when
+	// Value is not set
+	RawValue []byte `json:"rawValue,omitempty"`
 }
 
 // FunctionDeployment represents a request to create or update a Function.
