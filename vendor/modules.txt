@@ -1,6 +1,10 @@
 # github.com/gorilla/mux v1.8.0
+## explicit
 github.com/gorilla/mux
+# github.com/stretchr/testify v1.5.1
+## explicit
 # go.uber.org/goleak v1.1.0
+## explicit
 go.uber.org/goleak
 go.uber.org/goleak/internal/stack
 # golang.org/x/lint v0.0.0-20190930215403-16217165b5de
