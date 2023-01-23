@@ -104,12 +104,12 @@ func (s *SDK) GetFunctions(namespace string) ([]types.FunctionStatus, error) {
 		defer res.Body.Close()
 	}
 
-	bytesOut, _ := ioutil.ReadAll(res.Body)
+	body, _ := ioutil.ReadAll(res.Body)
 
 	functions := []types.FunctionStatus{}
-	if err := json.Unmarshal(bytesOut, &functions); err != nil {
+	if err := json.Unmarshal(body, &functions); err != nil {
 		return []types.FunctionStatus{},
-			fmt.Errorf("unable to unmarshal value: %q, error: %w", string(bytesOut), err)
+			fmt.Errorf("unable to unmarshal value: %q, error: %w", string(body), err)
 	}
 
 	return functions, nil
