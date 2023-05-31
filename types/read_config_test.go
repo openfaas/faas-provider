@@ -189,3 +189,50 @@ func TestRead_MaxIdleConns_Override(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func Test_ParseIntOrDuration(t *testing.T) {
+	tests := []struct {
+		val  string
+		want int
+		err  bool
+	}{
+		{
+			val:  "1m",
+			want: 60,
+			err:  false,
+		},
+		{
+			val:  "30",
+			want: 30,
+			err:  false,
+		},
+		{
+			val:  "invalid",
+			want: 0,
+			err:  true,
+		},
+		{
+			val:  "9223372036854775808",
+			want: 0,
+			err:  true,
+		},
+	}
+
+	for _, test := range tests {
+		got, err := ParseIntOrDuration(test.val)
+
+		if test.err {
+			if err == nil {
+				t.Errorf("parseIntOrDuration(%s) should have returned an error", test.val)
+			}
+		} else {
+			if err != nil {
+				t.Errorf("parseIntOrDuration(%s) returned an unexpected error: %v", test.val, err)
+			}
+
+			if test.want != got {
+				t.Errorf("parseIntOrDuration(%s) returned %d, wanted %d", test.val, got, test.want)
+			}
+		}
+	}
+}
