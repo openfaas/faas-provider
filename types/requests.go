@@ -28,10 +28,9 @@ type VersionInfo struct {
 	Release       string `json:"release"`
 }
 
-// FunctionNamespace is required for use with the /system/namespace/NAME endpoint
-// for deletions, just pass the namespace field.
+// FunctionNamespace is the namespace for a function
 type FunctionNamespace struct {
-	Namespace string `json:"namespace"`
+	Name string `json:"name"`
 
 	Annotations map[string]string `json:"annotations,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
