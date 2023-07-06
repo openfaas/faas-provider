@@ -3,15 +3,17 @@
 
 package types
 
-// ScaleServiceRequest scales the service to the requested replcia count.
+// ScaleServiceRequest scales the service to the requested replica count.
 type ScaleServiceRequest struct {
 	ServiceName string `json:"serviceName"`
 	Replicas    uint64 `json:"replicas"`
+	Namespace   string `json:"namespace,omitempty"`
 }
 
 // DeleteFunctionRequest delete a deployed function
 type DeleteFunctionRequest struct {
 	FunctionName string `json:"functionName"`
+	Namespace    string `json:"namespace,omitempty"`
 }
 
 // ProviderInfo provides information about the configured provider
