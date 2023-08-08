@@ -30,6 +30,7 @@ func (tr *testBaseURLResolver) Resolve(name string) (url.URL, error) {
 		Host:   tr.testServerBase,
 	}, nil
 }
+
 func Test_NewHandlerFunc_Panic(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
@@ -126,6 +127,12 @@ func Test_ProxyHandler_ResolveError(t *testing.T) {
 	if !strings.Contains(logs.String(), resolveErr.Error()) {
 		t.Errorf("expected logs to contain `%s`", resolveErr.Error())
 	}
+
+	internalErrorHeader := w.Header().Get("X-OpenFaaS-Internal")
+	wantHeaderValue := "proxy"
+	if internalErrorHeader != wantHeaderValue {
+		t.Errorf("expected X-OpenFaaS-Internal header to be %s, got %s", wantHeaderValue, internalErrorHeader)
+	}
 }
 
 func Test_ProxyHandler_Proxy_Success(t *testing.T) {
@@ -160,8 +167,48 @@ func Test_ProxyHandler_Proxy_Success(t *testing.T) {
 			proxyFunc(w, req)
 			resp := w.Result()
 			if resp.StatusCode != http.StatusNoContent {
-				t.Errorf("expected status code `%d`, got `%d`", http.StatusNoContent, resp.StatusCode)
+				t.Fatalf("expected status code `%d`, got `%d`", http.StatusNoContent, resp.StatusCode)
 			}
+
+			if v := resp.Header.Get("X-OpenFaaS-Internal"); v != "" {
+				t.Fatalf("expected X-OpenFaaS-Internal header to be empty, got %q", v)
+			}
+
 		})
+	}
+}
+
+func Test_ProxyHandler_Proxy_FailsMidFlight(t *testing.T) {
+	var svr *httptest.Server
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		svr.Close()
+		// w.WriteHeader(http.StatusOK)
+	})
+	svr = httptest.NewServer(testHandler)
+
+	config := types.FaaSConfig{
+		ReadTimeout:  100 * time.Millisecond,
+		WriteTimeout: 100 * time.Millisecond,
+	}
+
+	serverURL := strings.TrimPrefix(svr.URL, "http://")
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil})
+
+	w := httptest.NewRecorder()
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", nil)
+	req = mux.SetURLVars(req, map[string]string{"name": "foo"})
+
+	proxyFunc(w, req)
+	resp := w.Result()
+	wantCode := http.StatusInternalServerError
+	if resp.StatusCode != wantCode {
+		t.Fatalf("want status code `%d`, got `%d`", wantCode, resp.StatusCode)
+	}
+
+	if v := resp.Header.Get("X-OpenFaaS-Internal"); v != "proxy" {
+		t.Errorf("expected X-OpenFaaS-Internal header to be `proxy`, got %s", v)
 	}
 }

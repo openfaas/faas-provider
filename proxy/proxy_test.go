@@ -3,7 +3,7 @@ package proxy
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -186,7 +186,7 @@ func Test_buildProxyRequest_Body_Method_Query(t *testing.T) {
 		t.Fail()
 	}
 
-	upstreamBytes, _ := ioutil.ReadAll(upstream.Body)
+	upstreamBytes, _ := io.ReadAll(upstream.Body)
 
 	if string(upstreamBytes) != string(srcBytes) {
 		t.Errorf("Body - want: %s, got: %s", string(upstreamBytes), string(srcBytes))
@@ -357,7 +357,7 @@ func Test_buildProxyRequest_WithPathNoQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstreamBytes, _ := ioutil.ReadAll(upstream.Body)
+	upstreamBytes, _ := io.ReadAll(upstream.Body)
 
 	if string(upstreamBytes) != string(srcBytes) {
 		t.Errorf("Body - want: %s, got: %s", string(upstreamBytes), string(srcBytes))
@@ -409,7 +409,7 @@ func Test_buildProxyRequest_WithNoPathNoQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstreamBytes, _ := ioutil.ReadAll(upstream.Body)
+	upstreamBytes, _ := io.ReadAll(upstream.Body)
 
 	if string(upstreamBytes) != string(srcBytes) {
 		t.Errorf("Body - want: %s, got: %s", string(upstreamBytes), string(srcBytes))
@@ -459,7 +459,7 @@ func Test_buildProxyRequest_WithPathAndQuery(t *testing.T) {
 		t.Fail()
 	}
 
-	upstreamBytes, _ := ioutil.ReadAll(upstream.Body)
+	upstreamBytes, _ := io.ReadAll(upstream.Body)
 
 	if string(upstreamBytes) != string(srcBytes) {
 		t.Errorf("Body - want: %s, got: %s", string(upstreamBytes), string(srcBytes))
