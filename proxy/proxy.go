@@ -137,20 +137,27 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	pathVars := mux.Vars(originalReq)
 	functionName := pathVars["name"]
 	if functionName == "" {
+		w.Header().Add("x-openfaas-internal", "proxy")
+
 		httputil.Errorf(w, http.StatusBadRequest, "Provide function name in the request path")
 		return
 	}
 
-	functionAddr, resolveErr := resolver.Resolve(functionName)
-	if resolveErr != nil {
+	functionAddr, err := resolver.Resolve(functionName)
+	if err != nil {
+		w.Header().Add("x-openfaas-internal", "proxy")
+
 		// TODO: Should record the 404/not found error in Prometheus.
-		log.Printf("resolver error: no endpoints for %s: %s\n", functionName, resolveErr.Error())
+		log.Printf("resolver error: no endpoints for %s: %s\n", functionName, err.Error())
 		httputil.Errorf(w, http.StatusServiceUnavailable, "No endpoints available for: %s.", functionName)
 		return
 	}
 
 	proxyReq, err := buildProxyRequest(originalReq, functionAddr, pathVars["params"])
 	if err != nil {
+
+		w.Header().Add("x-openfaas-internal", "proxy")
+
 		httputil.Errorf(w, http.StatusInternalServerError, "Failed to resolve service: %s.", functionName)
 		return
 	}
@@ -165,6 +172,8 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 
 	if err != nil {
 		log.Printf("error with proxy request to: %s, %s\n", proxyReq.URL.String(), err.Error())
+
+		w.Header().Add("x-openfaas-internal", "proxy")
 
 		httputil.Errorf(w, http.StatusInternalServerError, "Can't reach service for: %s.", functionName)
 		return
