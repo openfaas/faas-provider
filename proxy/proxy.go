@@ -185,7 +185,9 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 		defer response.Body.Close()
 	}
 
-	log.Printf("%s took %f seconds\n", functionName, seconds.Seconds())
+	if verbose {
+		log.Printf("%s took %f seconds\n", functionName, seconds.Seconds())
+	}
 
 	clientHeader := w.Header()
 	copyHeaders(clientHeader, &response.Header)
