@@ -39,7 +39,7 @@ func Test_NewHandlerFunc_Panic(t *testing.T) {
 	}()
 
 	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
-	NewHandlerFunc(config, nil)
+	NewHandlerFunc(config, nil, false)
 }
 
 func Test_NewHandlerFunc_NoPanic(t *testing.T) {
@@ -50,7 +50,7 @@ func Test_NewHandlerFunc_NoPanic(t *testing.T) {
 	}()
 
 	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{}, false)
 	if proxyFunc == nil {
 		t.Errorf("proxy handler func is nil")
 	}
@@ -58,7 +58,7 @@ func Test_NewHandlerFunc_NoPanic(t *testing.T) {
 
 func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{}, false)
 
 	nonAllowedMethods := []string{
 		http.MethodConnect, http.MethodTrace,
@@ -79,7 +79,7 @@ func Test_ProxyHandler_NonAllowedMethods(t *testing.T) {
 
 func Test_ProxyHandler_MissingFunctionNameError(t *testing.T) {
 	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", nil})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", nil}, false)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
@@ -104,7 +104,7 @@ func Test_ProxyHandler_ResolveError(t *testing.T) {
 	resolveErr := errors.New("can not find test service `foo`")
 
 	config := types.FaaSConfig{ReadTimeout: 100 * time.Millisecond}
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", resolveErr})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{"", resolveErr}, false)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
@@ -146,7 +146,7 @@ func Test_ProxyHandler_Proxy_Success(t *testing.T) {
 	}
 
 	serverURL := strings.TrimPrefix(testFuncService.URL, "http://")
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil}, false)
 
 	nonAllowedMethods := []string{
 		http.MethodPost,
@@ -194,7 +194,7 @@ func Test_ProxyHandler_Proxy_FailsMidFlight(t *testing.T) {
 	}
 
 	serverURL := strings.TrimPrefix(svr.URL, "http://")
-	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil})
+	proxyFunc := NewHandlerFunc(config, &testBaseURLResolver{serverURL, nil}, false)
 
 	w := httptest.NewRecorder()
 

@@ -60,7 +60,7 @@ func Test_ProxyHandler_StatusCode(t *testing.T) {
 			}))
 
 			u, err := url.Parse(upstream.URL)
-			proxyHandler := NewHandlerFunc(config, mockResolver{u, err})
+			proxyHandler := NewHandlerFunc(config, mockResolver{u, err}, false)
 
 			rr := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "", nil)
@@ -319,7 +319,7 @@ func Test_proxyRequest_ContentType_Header(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proxyHandler := NewHandlerFunc(config, mockResolver{u, err})
+	proxyHandler := NewHandlerFunc(config, mockResolver{u, err}, false)
 
 	proxyHandler.ServeHTTP(rr, req)
 

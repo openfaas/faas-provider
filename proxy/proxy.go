@@ -49,6 +49,8 @@ type BaseURLResolver interface {
 }
 
 // NewHandlerFunc creates a standard http.HandlerFunc to proxy function requests.
+// When verbose is set to true, the timing of each invocation will be printed out to
+// stderr.
 // The returned http.HandlerFunc will ensure:
 //
 //   - proper proxy request timeouts
@@ -58,7 +60,7 @@ type BaseURLResolver interface {
 //   - logging errors and proxy request timing to stdout
 //
 // Note that this will panic if `resolver` is nil.
-func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.HandlerFunc {
+func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver, verbose bool) http.HandlerFunc {
 	if resolver == nil {
 		panic("NewHandlerFunc: empty proxy handler resolver, cannot be nil")
 	}
@@ -78,7 +80,7 @@ func NewHandlerFunc(config types.FaaSConfig, resolver BaseURLResolver) http.Hand
 			http.MethodGet,
 			http.MethodOptions,
 			http.MethodHead:
-			proxyRequest(w, r, proxyClient, resolver)
+			proxyRequest(w, r, proxyClient, resolver, verbose)
 
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -131,7 +133,7 @@ func NewProxyClient(timeout time.Duration, maxIdleConns int, maxIdleConnsPerHost
 }
 
 // proxyRequest handles the actual resolution of and then request to the function service.
-func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient *http.Client, resolver BaseURLResolver) {
+func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient *http.Client, resolver BaseURLResolver, verbose bool) {
 	ctx := originalReq.Context()
 
 	pathVars := mux.Vars(originalReq)
