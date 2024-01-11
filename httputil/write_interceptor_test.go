@@ -6,32 +6,42 @@ import (
 	"testing"
 )
 
-func Test_StatusIsRecorded(t *testing.T) {
-	wantCode := http.StatusAccepted
-	gotCode := 0
+func Test_WriteCountsBytes(t *testing.T) {
+	w := httptest.NewRecorder()
+	wi := NewHttpWriteInterceptor(w)
 
-	next := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(wantCode)
+	writeStr := "hello world"
+	wi.Write([]byte(writeStr))
 
+	want := int64(len(writeStr))
+	got := wi.BytesWritten()
+	if got != want {
+		t.Errorf("want bytes: %d, got %d", want, got)
 	}
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ww := NewHttpWriteInterceptor(w)
-		next(ww, r)
-		gotCode = ww.Status()
-	}))
+}
 
-	defer func() {
-		s.Close()
-	}()
+func Test_WriteGetsStatusCode(t *testing.T) {
+	w := httptest.NewRecorder()
+	wi := NewHttpWriteInterceptor(w)
 
-	req, _ := http.NewRequest("GET", s.URL, nil)
-	_, err := http.DefaultClient.Do(req)
+	wi.WriteHeader(http.StatusTeapot)
 
-	if err != nil {
-		t.Fatalf("Error doing request: %v", err)
+	want := http.StatusTeapot
+	got := wi.Status()
+	if got != want {
+		t.Errorf("want status code: %d, got %d", want, got)
 	}
+}
 
-	if gotCode != wantCode {
-		t.Errorf("got code %d, want %d", gotCode, wantCode)
+func Test_WriteGetsStatusCode_WithoutWriteHeader(t *testing.T) {
+	w := httptest.NewRecorder()
+	wi := NewHttpWriteInterceptor(w)
+
+	wi.Write([]byte("hello world"))
+
+	want := http.StatusOK
+	got := wi.Status()
+	if got != want {
+		t.Errorf("want default status code: %d, got %d", want, got)
 	}
 }

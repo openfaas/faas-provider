@@ -2,7 +2,7 @@ package httputil
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -24,7 +24,7 @@ func TestFirstWriteSetsStatusCode(t *testing.T) {
 		t.Fatalf("incorrect status code in the original response object: %d", w.Result().StatusCode)
 	}
 
-	out, _ := ioutil.ReadAll(w.Result().Body)
+	out, _ := io.ReadAll(w.Result().Body)
 	if string(out) != `{"value": "ok"}` {
 		t.Fatalf("incorrect response content: %q", out)
 	}
