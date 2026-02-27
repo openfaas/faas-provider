@@ -209,7 +209,10 @@ func proxyRequest(w http.ResponseWriter, originalReq *http.Request, proxyClient 
 	}
 
 	if response.Body != nil {
-		defer response.Body.Close()
+		defer func() {
+			_, _ = io.Copy(io.Discard, response.Body) // drain to EOF
+			_ = response.Body.Close()
+		}()
 	}
 
 	clientHeader := w.Header()

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -39,7 +40,10 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenProviderClosesStream(t *testing.T)
 
 	querier.Close()
 
-	defer resp.Body.Close()
+	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body) // drain to EOF
+		_ = resp.Body.Close()
+	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("unexpected error reading log response: %s", err)
@@ -74,7 +78,10 @@ func Test_logsHandlerDoesNotLeakGoroutinesWhenClientClosesConnection(t *testing.
 	}
 
 	go func() {
-		defer resp.Body.Close()
+		defer func() {
+			_, _ = io.Copy(io.Discard, resp.Body) // drain to EOF
+			_ = resp.Body.Close()
+		}()
 		_, err := ioutil.ReadAll(resp.Body)
 		if err != context.Canceled {
 			t.Fatalf("unexpected error reading log response: %s", err)
