@@ -129,13 +129,11 @@ func NewProxyClient(timeout time.Duration, maxIdleConns int, maxIdleConnsPerHost
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: (&net.Dialer{
-				Timeout:   timeout,
-				KeepAlive: 1 * time.Second,
-				DualStack: true,
+				Timeout: timeout,
 			}).DialContext,
 			MaxIdleConns:          maxIdleConns,
 			MaxIdleConnsPerHost:   maxIdleConnsPerHost,
-			IdleConnTimeout:       120 * time.Millisecond,
+			IdleConnTimeout:       5 * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 1500 * time.Millisecond,
 		},
