@@ -103,7 +103,8 @@ func Serve(ctx context.Context, handlers *types.FaaSHandlers, config *types.FaaS
 	r.HandleFunc("/function/{name:["+NameExpression+"]+}/{params:.*}", proxyHandler)
 
 	if handlers.Health != nil {
-		r.HandleFunc("/healthz", handlers.Health).Methods(http.MethodGet)
+		r.HandleFunc("/healthz", handlers.Health).
+			Methods(http.MethodGet, http.MethodHead)
 	}
 
 	if handlers.Telemetry != nil {
