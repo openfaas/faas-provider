@@ -2,9 +2,11 @@ name: build
 
 on:
   push:
-    branches: [ '*' ]
+    branches:
+      - master
   pull_request:
-    branches: [ '*' ]
+    branches:
+      - "*"
 
 jobs:
   build:
