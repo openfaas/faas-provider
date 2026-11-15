@@ -9,6 +9,7 @@ import (
 
 	"github.com/openfaas/faas-provider/auth"
 	"github.com/openfaas/faas-provider/types"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
@@ -102,7 +103,8 @@ func TestMakeHandlerIsIsolated(t *testing.T) {
 					w.WriteHeader(tc.status)
 				},
 			}
-			server := httptest.NewServer(MakeHandler(&handlers, &types.FaaSConfig{}))
+			registry := prometheus.NewRegistry()
+			server := httptest.NewServer(MakeHandler(&handlers, &types.FaaSConfig{}, registry, registry))
 			t.Cleanup(server.Close)
 
 			response, err := server.Client().Get(server.URL + "/system/namespaces")
@@ -138,7 +140,8 @@ func TestMakeHandlerProtectsNilNamespaceLister(t *testing.T) {
 		EnableBasicAuth: true,
 		SecretMountPath: secretMountPath,
 	}
-	server := httptest.NewServer(MakeHandler(&handlers, &config))
+	registry := prometheus.NewRegistry()
+	server := httptest.NewServer(MakeHandler(&handlers, &config, registry, registry))
 	t.Cleanup(server.Close)
 
 	request, err := http.NewRequest(http.MethodGet, server.URL+"/system/namespaces", nil)
