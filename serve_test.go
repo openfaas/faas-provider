@@ -3,6 +3,8 @@ package bootstrap
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/openfaas/faas-provider/auth"
@@ -82,4 +84,87 @@ func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
 func TestDecorateNamespaceHandlersWithBasicAuthAllowsNilHandlers(t *testing.T) {
 	handlers := types.FaaSHandlers{}
 	decorateNamespaceHandlersWithBasicAuth(&handlers, &auth.BasicAuthCredentials{})
+}
+
+func TestMakeHandlerIsIsolated(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+	}{
+		{name: "first handler", status: http.StatusAccepted},
+		{name: "second handler", status: http.StatusCreated},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			handlers := types.FaaSHandlers{
+				ListNamespaces: func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(tc.status)
+				},
+			}
+			server := httptest.NewServer(MakeHandler(&handlers, &types.FaaSConfig{}))
+			t.Cleanup(server.Close)
+
+			response, err := server.Client().Get(server.URL + "/system/namespaces")
+			if err != nil {
+				t.Fatal(err)
+			}
+			response.Body.Close()
+			if response.StatusCode != tc.status {
+				t.Fatalf("want status %d, got %d", tc.status, response.StatusCode)
+			}
+		})
+	}
+}
+
+func TestMakeHandlerProtectsNilNamespaceLister(t *testing.T) {
+	const (
+		user     = "admin"
+		password = "correct-horse-battery-staple"
+	)
+
+	secretMountPath := t.TempDir()
+	for name, value := range map[string]string{
+		"basic-auth-user":     user,
+		"basic-auth-password": password,
+	} {
+		if err := os.WriteFile(filepath.Join(secretMountPath, name), []byte(value), 0o600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	handlers := types.FaaSHandlers{}
+	config := types.FaaSConfig{
+		EnableBasicAuth: true,
+		SecretMountPath: secretMountPath,
+	}
+	server := httptest.NewServer(MakeHandler(&handlers, &config))
+	t.Cleanup(server.Close)
+
+	request, err := http.NewRequest(http.MethodGet, server.URL+"/system/namespaces", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := server.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("want unauthenticated status %d, got %d", http.StatusUnauthorized, response.StatusCode)
+	}
+
+	request, err = http.NewRequest(http.MethodGet, server.URL+"/system/namespaces", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.SetBasicAuth(user, password)
+	response, err = server.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if response.StatusCode != http.StatusNotImplemented {
+		t.Fatalf("want authenticated status %d, got %d", http.StatusNotImplemented, response.StatusCode)
+	}
 }
