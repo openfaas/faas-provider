@@ -62,20 +62,7 @@ func makeHandler(router *mux.Router, handlers *types.FaaSHandlers, config *types
 			log.Fatalf("failed to read basic auth credentials: %s", err)
 		}
 
-		handlers.FunctionLister = auth.DecorateWithBasicAuth(handlers.FunctionLister, credentials)
-		handlers.DeployFunction = auth.DecorateWithBasicAuth(handlers.DeployFunction, credentials)
-		handlers.DeleteFunction = auth.DecorateWithBasicAuth(handlers.DeleteFunction, credentials)
-		handlers.UpdateFunction = auth.DecorateWithBasicAuth(handlers.UpdateFunction, credentials)
-		handlers.FunctionStatus = auth.DecorateWithBasicAuth(handlers.FunctionStatus, credentials)
-		handlers.ScaleFunction = auth.DecorateWithBasicAuth(handlers.ScaleFunction, credentials)
-		handlers.Info = auth.DecorateWithBasicAuth(handlers.Info, credentials)
-		handlers.Secrets = auth.DecorateWithBasicAuth(handlers.Secrets, credentials)
-		handlers.Logs = auth.DecorateWithBasicAuth(handlers.Logs, credentials)
-		decorateNamespaceHandlersWithBasicAuth(handlers, credentials)
-
-		if handlers.Telemetry != nil {
-			handlers.Telemetry = auth.DecorateWithBasicAuth(handlers.Telemetry, credentials)
-		}
+		decorateWithBasicAuth(handlers, credentials)
 	}
 
 	hm := newHttpMetrics(registerer)
@@ -168,7 +155,21 @@ func Serve(ctx context.Context, handlers *types.FaaSHandlers, config *types.FaaS
 	}
 }
 
-func decorateNamespaceHandlersWithBasicAuth(handlers *types.FaaSHandlers, credentials *auth.BasicAuthCredentials) {
+func decorateWithBasicAuth(handlers *types.FaaSHandlers, credentials *auth.BasicAuthCredentials) {
+	handlers.FunctionLister = auth.DecorateWithBasicAuth(handlers.FunctionLister, credentials)
+	handlers.DeployFunction = auth.DecorateWithBasicAuth(handlers.DeployFunction, credentials)
+	handlers.DeleteFunction = auth.DecorateWithBasicAuth(handlers.DeleteFunction, credentials)
+	handlers.UpdateFunction = auth.DecorateWithBasicAuth(handlers.UpdateFunction, credentials)
+	handlers.FunctionStatus = auth.DecorateWithBasicAuth(handlers.FunctionStatus, credentials)
+	handlers.ScaleFunction = auth.DecorateWithBasicAuth(handlers.ScaleFunction, credentials)
+	handlers.Info = auth.DecorateWithBasicAuth(handlers.Info, credentials)
+	handlers.Secrets = auth.DecorateWithBasicAuth(handlers.Secrets, credentials)
+	handlers.Logs = auth.DecorateWithBasicAuth(handlers.Logs, credentials)
+
+	if handlers.Telemetry != nil {
+		handlers.Telemetry = auth.DecorateWithBasicAuth(handlers.Telemetry, credentials)
+	}
+
 	if handlers.ListNamespaces != nil {
 		handlers.ListNamespaces = auth.DecorateWithBasicAuth(handlers.ListNamespaces, credentials)
 	}

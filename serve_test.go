@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
+func TestDecorateWithBasicAuth(t *testing.T) {
 	credentials := &auth.BasicAuthCredentials{
 		User:     "admin",
 		Password: "correct-horse-battery-staple",
@@ -22,24 +22,24 @@ func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
 		name    string
 		method  string
 		path    string
+		status  int
 		handler func(*types.FaaSHandlers) http.HandlerFunc
 	}{
-		{
-			name:   "list namespaces",
-			method: http.MethodGet,
-			path:   "/system/namespaces",
-			handler: func(handlers *types.FaaSHandlers) http.HandlerFunc {
-				return handlers.ListNamespaces
-			},
-		},
-		{
-			name:   "mutate namespace",
-			method: http.MethodPost,
-			path:   "/system/namespace/",
-			handler: func(handlers *types.FaaSHandlers) http.HandlerFunc {
-				return handlers.MutateNamespace
-			},
-		},
+		{"list namespaces", http.MethodGet, "/system/namespaces", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.ListNamespaces }},
+		{"get namespace", http.MethodGet, "/system/namespace/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.MutateNamespace }},
+		{"create namespace", http.MethodPost, "/system/namespace/test", http.StatusCreated, func(h *types.FaaSHandlers) http.HandlerFunc { return h.MutateNamespace }},
+		{"update namespace", http.MethodPut, "/system/namespace/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.MutateNamespace }},
+		{"delete namespace", http.MethodDelete, "/system/namespace/test", http.StatusAccepted, func(h *types.FaaSHandlers) http.HandlerFunc { return h.MutateNamespace }},
+		{"FunctionLister", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.FunctionLister }},
+		{"DeployFunction", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.DeployFunction }},
+		{"DeleteFunction", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.DeleteFunction }},
+		{"UpdateFunction", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.UpdateFunction }},
+		{"FunctionStatus", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.FunctionStatus }},
+		{"ScaleFunction", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.ScaleFunction }},
+		{"Info", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.Info }},
+		{"Secrets", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.Secrets }},
+		{"Logs", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.Logs }},
+		{"Telemetry", http.MethodGet, "/system/test", http.StatusOK, func(h *types.FaaSHandlers) http.HandlerFunc { return h.Telemetry }},
 	}
 
 	for _, tc := range tests {
@@ -47,14 +47,24 @@ func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
 			called := 0
 			stub := func(w http.ResponseWriter, _ *http.Request) {
 				called++
-				w.WriteHeader(http.StatusAccepted)
+				w.WriteHeader(tc.status)
 			}
 
 			handlers := types.FaaSHandlers{
 				ListNamespaces:  stub,
 				MutateNamespace: stub,
+				FunctionLister:  stub,
+				DeployFunction:  stub,
+				DeleteFunction:  stub,
+				UpdateFunction:  stub,
+				FunctionStatus:  stub,
+				ScaleFunction:   stub,
+				Info:            stub,
+				Secrets:         stub,
+				Logs:            stub,
+				Telemetry:       stub,
 			}
-			decorateNamespaceHandlersWithBasicAuth(&handlers, credentials)
+			decorateWithBasicAuth(&handlers, credentials)
 
 			unauthenticated := httptest.NewRequest(tc.method, tc.path, nil)
 			unauthenticatedResponse := httptest.NewRecorder()
@@ -72,8 +82,8 @@ func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
 			authenticatedResponse := httptest.NewRecorder()
 			tc.handler(&handlers)(authenticatedResponse, authenticated)
 
-			if authenticatedResponse.Code != http.StatusAccepted {
-				t.Fatalf("want authenticated status %d, got %d", http.StatusAccepted, authenticatedResponse.Code)
+			if authenticatedResponse.Code != tc.status {
+				t.Fatalf("want authenticated status %d, got %d", tc.status, authenticatedResponse.Code)
 			}
 			if called != 1 {
 				t.Fatalf("want protected handler to be called once, got %d calls", called)
@@ -82,9 +92,23 @@ func TestDecorateNamespaceHandlersWithBasicAuth(t *testing.T) {
 	}
 }
 
-func TestDecorateNamespaceHandlersWithBasicAuthAllowsNilHandlers(t *testing.T) {
-	handlers := types.FaaSHandlers{}
-	decorateNamespaceHandlersWithBasicAuth(&handlers, &auth.BasicAuthCredentials{})
+func TestDecorateWithBasicAuthAllowsNilHandlers(t *testing.T) {
+	stub := func(http.ResponseWriter, *http.Request) {}
+	for _, handlers := range []types.FaaSHandlers{
+		{},
+		{ListNamespaces: stub},
+		{MutateNamespace: stub},
+	} {
+		listNil := handlers.ListNamespaces == nil
+		mutateNil := handlers.MutateNamespace == nil
+		decorateWithBasicAuth(&handlers, &auth.BasicAuthCredentials{})
+		if (handlers.ListNamespaces == nil) != listNil {
+			t.Fatal("namespace lister availability changed")
+		}
+		if (handlers.MutateNamespace == nil) != mutateNil {
+			t.Fatal("namespace mutation availability changed")
+		}
+	}
 }
 
 func TestMakeHandlerIsIsolated(t *testing.T) {
